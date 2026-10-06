@@ -1,0 +1,70 @@
+{% from "_macros.html" import snippet as snippet_panel %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{% block title %}{{ page_title | default("Playground") }}{% endblock %} · Kinde Python SDK Playground</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand" href="/">
+      <span class="brand-mark">K</span>
+      <span><strong>Kinde Python SDK</strong><small>Playground</small></span>
+    </a>
+    <nav>
+      {% for section, links in nav %}
+        <p class="nav-section">{{ section }}</p>
+        {% for href, name, label in links %}
+          <a href="{{ href }}" class="nav-link{% if request.path == href or (href != '/' and request.path.startswith(href + '/')) %} active{% endif %}">{{ label }}</a>
+        {% endfor %}
+      {% endfor %}
+    </nav>
+    <div class="sidebar-foot">
+      <span class="badge badge-{{ framework }}">{{ "Flask" if framework == "flask" else "FastAPI" }}</span>
+      <span class="badge">{{ client_kind }}</span>
+      {% if settings.force_api %}<span class="badge badge-warn">force_api</span>{% endif %}
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1>{% block heading %}{{ page_title | default("Playground") }}{% endblock %}</h1>
+        {% block lede %}{% endblock %}
+      </div>
+      <div class="auth-chip">
+        {% if auth.authenticated %}
+          <span class="avatar">{{ auth.initials }}{% if auth.picture %}<img src="{{ auth.picture }}" alt="" referrerpolicy="no-referrer">{% endif %}</span>
+          <span class="auth-name">
+            <strong>{{ auth.name }}</strong>
+            <small>{{ auth.org_name or auth.org_code or auth.email or "" }}</small>
+          </span>
+          <a class="btn btn-ghost" href="/logout">Sign out</a>
+        {% else %}
+          <a class="btn btn-ghost" href="/register">Sign up</a>
+          <a class="btn" href="/auth/start?next={{ request.path | urlencode }}">Sign in</a>
+        {% endif %}
+      </div>
+    </header>
+
+    {% if flashes %}
+    <div class="flashes" role="status">
+      {% for f in flashes %}<div class="flash flash-{{ f.kind }}">{{ f.message }}</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="content{% if snippet %} with-aside{% endif %}">
+      <main class="page">{% block content %}{% endblock %}</main>
+      {% if snippet %}
+      <aside class="aside">{{ snippet_panel(snippet) }}{% block aside %}{% endblock %}</aside>
+      {% endif %}
+    </div>
+  </div>
+</div>
+</body>
+</html>

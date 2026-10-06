@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Self-serve portal" %}
+{% block lede %}<p class="lede">Send users to Kinde-hosted pages for their profile, organization and billing. Links are generated on click and are single use.</p>{% endblock %}
+{% block content %}
+<section class="tiles">
+  {% for page in pages %}
+  <form class="tile" method="post" action="/portal/open">
+    {{ ui.csrf() }}
+    <input type="hidden" name="sub_nav" value="{{ page.value }}">
+    <strong>{{ page.label }}</strong>
+    <p>{{ page.description }}</p>
+    <code class="small">PortalPage.{{ page.value | upper }}</code>
+    <button class="btn btn-ghost">Open</button>
+  </form>
+  {% endfor %}
+</section>
+{% endblock %}

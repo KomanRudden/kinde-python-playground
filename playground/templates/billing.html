@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Billing & entitlements" %}
+{% block lede %}<p class="lede">What the current organization's plan includes, and where customers manage it.</p>{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h2>All entitlements</h2>
+    <form method="post" action="/portal/open">{{ ui.csrf() }}<input type="hidden" name="sub_nav" value="organization_plan_selection"><button class="btn btn-ghost">Change plan</button></form>
+  </div>
+  {% if all.ok and all.result %}
+    <table class="table">
+      <thead><tr><th>Feature</th><th>Name</th><th>Limit</th><th>Price</th></tr></thead>
+      <tbody>
+      {% for e in all.result %}
+        <tr>
+          <td><code>{{ e.feature_key }}</code></td>
+          <td>{{ e.feature_name }}</td>
+          <td>{{ e.entitlement_limit_max if e.entitlement_limit_max is not none else "unlimited" }}</td>
+          <td>{{ e.price_name or "" }}{% if e.fixed_charge %} · {{ e.fixed_charge }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% elif all.ok %}
+    {{ ui.empty("No entitlements", "This organization has no billing plan, or billing isn't enabled for your business.") }}
+  {% else %}
+    {{ ui.call_result(all) }}
+  {% endif %}
+</section>
+
+<form class="card form inline" method="get" action="/billing">
+  <label class="field"><span>Entitlement key</span><input name="key" value="{{ key }}"></label>
+  <button class="btn">Look up</button>
+</form>
+<section class="card">
+  {{ ui.call_result(one) }}
+  {% if not one.ok and "HTTP 400" in one.error %}
+  <p class="muted small">Kinde answers 400 when the current organization's plan doesn't include <code>{{ key }}</code>{% if all.ok and not all.result %}, and this organization has no entitlements at all{% endif %}. Treat it as "not entitled", as the protected-route guard does.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Organizations" %}
+{% block lede %}<p class="lede">Organizations you belong to, and how to switch between them.</p>{% endblock %}
+{% block content %}
+<section class="card">
+  {% if orgs %}
+  <table class="table">
+    <thead><tr><th>Organization</th><th>Code</th><th></th></tr></thead>
+    <tbody>
+    {% for org in orgs %}
+      <tr>
+        <td>{{ org.name or "—" }}</td>
+        <td><code>{{ org.code }}</code></td>
+        <td class="right">
+          {% if org.current %}<span class="status status-ok">Current</span>
+          {% else %}
+          <form method="post" action="/auth/start">{{ ui.csrf() }}<input type="hidden" name="org_code" value="{{ org.code }}"><input type="hidden" name="next" value="/organizations"><button class="btn btn-ghost">Switch</button></form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    {{ ui.empty("No organizations", "Your token has no org_code or org_codes claims.") }}
+  {% endif %}
+  {% if not management_enabled %}<p class="muted small">Organization names other than the current one come from the Management API, which isn't configured.</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>Create a new organization</h2>
+  <p>Sign up with <code>is_create_org</code> to create an organization and become its first member.</p>
+  <form class="form inline" method="post" action="/auth/start">
+    {{ ui.csrf() }}
+    <input type="hidden" name="flow" value="register">
+    <input type="hidden" name="is_create_org" value="on">
+    <input type="hidden" name="next" value="/organizations">
+    <label class="field"><span>Organization name</span><input name="org_name" required placeholder="Acme Inc"></label>
+    <button class="btn">Create and sign in</button>
+  </form>
+</section>
+{% endblock %}

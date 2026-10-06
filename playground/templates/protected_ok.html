@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% set page_title = title %}
+{% block content %}
+<section class="card success-card">
+  <h2>Access granted</h2>
+  <p>You passed the <strong>{{ title | lower }}</strong> guard, so the handler ran.</p>
+  <a class="btn btn-ghost" href="/protected">Back to protected routes</a>
+</section>
+{% endblock %}

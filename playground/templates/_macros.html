@@ -1,0 +1,61 @@
+{% macro snippet(code, title="How this works") %}
+<details class="snippet" open>
+  <summary>{{ title }}</summary>
+  <div class="snippet-body">
+    <button type="button" class="btn-ghost copy" data-copy-target="next" aria-label="Copy code">Copy</button>
+    <pre class="code"><code>{{ code }}</code></pre>
+  </div>
+</details>
+{% endmacro %}
+
+{% macro status(value) %}
+<span class="status status-{{ value }}">{{ {"ok": "Pass", "fail": "Fail", "warn": "Check", "info": "Info", "allowed": "Allowed", "denied": "Denied", "signin": "Sign in"}.get(value, value) }}</span>
+{% endmacro %}
+
+{% macro call_result(call, expression=None) %}
+<div class="call {{ 'call-ok' if call.ok else 'call-error' }}">
+  <div class="call-head">
+    <code class="call-label">{{ expression or call.label }}</code>
+    <span class="call-meta">
+      {% if call.ok %}<span class="status status-ok">OK</span>{% else %}<span class="status status-fail">Error</span>{% endif %}
+      <span class="muted">{{ call.ms }} ms</span>
+    </span>
+  </div>
+  {% if call.ok %}
+    {{ call.result | json }}
+  {% else %}
+    <p class="call-error-text">{{ call.error }}</p>
+  {% endif %}
+  {% if call.sdk_warnings %}
+  <div class="call-warnings">
+    <strong>The SDK logged:</strong>
+    <ul>{% for w in call.sdk_warnings %}<li class="mono">{{ w }}</li>{% endfor %}</ul>
+    {% if call.ok %}<p class="small">It handled the failure and returned a safe fallback, shown above.</p>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endmacro %}
+
+{% macro empty(title, text) %}
+<div class="empty">
+  <strong>{{ title }}</strong>
+  <p>{{ text }}</p>
+</div>
+{% endmacro %}
+
+{% macro check_list(checks) %}
+<ul class="checks">
+  {% for check in checks %}
+  <li class="check">
+    {{ status(check.status) }}
+    <div>
+      <strong>{{ check.name }}</strong>
+      <p>{{ check.detail }}</p>
+      {% if check.evidence %}<p class="muted small">{{ check.evidence }}</p>{% endif %}
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% endmacro %}

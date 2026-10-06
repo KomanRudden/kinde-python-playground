@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Management API" %}
+{% block lede %}<p class="lede">Server-side administration with an M2M application: read anything, and try common write flows safely.</p>{% endblock %}
+{% block content %}
+{% if not enabled %}
+<section class="card">
+  <h2>Connect a machine-to-machine application</h2>
+  <ol class="steps">
+    <li>In Kinde, go to <em>Settings → Applications → Add application</em> and choose <em>Machine to machine</em>.</li>
+    <li>Under <em>APIs</em>, authorize it for the <em>Kinde Management API</em> and grant the scopes you need (e.g. <code>read:users</code>, <code>read:organizations</code>).</li>
+    <li>Set <code>KINDE_MANAGEMENT_CLIENT_ID</code> and <code>KINDE_MANAGEMENT_CLIENT_SECRET</code> in <code>.env</code> and restart.</li>
+  </ol>
+  <p class="muted small">Use a separate M2M application rather than your web app's credentials, and never expose these calls to the browser.</p>
+</section>
+{% else %}
+
+<section class="grid-2">
+  <div class="card">
+    <h2>M2M access token</h2>
+    <div data-src="/management/partials/token"><p class="muted">Requesting a token…</p></div>
+  </div>
+  <div class="card">
+    <h2>Quick reads</h2>
+    <div class="chips">
+      {% for key, label in curated %}
+        <button type="button" class="chip" data-load="/management/partials/read?call={{ key }}" data-into="#quick-result">{{ label }}</button>
+      {% endfor %}
+    </div>
+    <div id="quick-result"><p class="muted small">Pick a call to run it.</p></div>
+  </div>
+</section>
+
+<section class="card" id="console">
+  <h2>API console <span class="badge">read only</span></h2>
+  <p class="muted">Every <code>get_*</code> and <code>search_*</code> method on <code>ManagementClient</code>'s APIs, discovered from the SDK. Responses are shown with credentials masked.</p>
+  <form class="form inline" method="get" action="/management#console">
+    <label class="field">
+      <span>API</span>
+      <select name="api" data-autosubmit>
+        {% for api_name in catalog %}<option value="{{ api_name }}" {% if api_name == selected_api %}selected{% endif %}>{{ api_name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span>Method</span>
+      <select name="method" data-autosubmit>
+        {% for method_name in catalog.get(selected_api, {}) %}<option value="{{ method_name }}" {% if method_name == selected_method %}selected{% endif %}>{{ method_name }}</option>{% endfor %}
+      </select>
+    </label>
+    <noscript><button class="btn btn-ghost">Select</button></noscript>
+  </form>
+
+  {% if method_info %}
+  <form class="form" method="post" action="/management/console#console">
+    {{ ui.csrf() }}
+    <input type="hidden" name="api" value="{{ selected_api }}">
+    <input type="hidden" name="method" value="{{ selected_method }}">
+    {% if method_info.doc %}<p><strong>{{ method_info.doc }}</strong></p>{% endif %}
+    <div class="fields">
+      {% for p in method_info.params %}
+      <label class="field">
+        <span>{{ p.name }} <code class="small">{{ p.type }}</code>{% if p.required %} <span class="required">required</span>{% endif %}</span>
+        {% if p.type == "bool" %}
+          <select name="p_{{ p.name }}"><option value="">unset</option><option value="true" {% if (console_values or {}).get(p.name) == "true" %}selected{% endif %}>true</option><option value="false" {% if (console_values or {}).get(p.name) == "false" %}selected{% endif %}>false</option></select>
+        {% else %}
+          <input name="p_{{ p.name }}" value="{{ (console_values or {}).get(p.name, '') }}" {% if p.type in ("int", "float") %}inputmode="numeric"{% endif %} {% if p.required %}required{% endif %}>
+        {% endif %}
+        {% if p.description %}<small>{{ p.description }}</small>{% endif %}
+      </label>
+      {% else %}
+      <p class="muted">No parameters.</p>
+      {% endfor %}
+    </div>
+    <button class="btn">Run</button>
+  </form>
+  {% endif %}
+
+  {% if console_result %}{{ ui.call_result(console_result, console_expression) }}{% endif %}
+</section>
+
+{% if last_result %}
+<section class="card" id="result">
+  <h2>{{ last_result.title }}</h2>
+  {{ ui.call_result({"ok": last_result.ok, "result": last_result.result, "error": last_result.error, "ms": last_result.ms, "label": last_result.title}) }}
+</section>
+{% endif %}
+
+<section class="card" id="scenarios">
+  <div class="card-head">
+    <h2>Write scenarios</h2>
+    {% if allow_mutations %}<span class="status status-warn">Writes enabled</span>{% else %}<span class="status status-info">Disabled</span>{% endif %}
+  </div>
+  {% if not allow_mutations %}
+    <p>These change your Kinde business. Set <code>PLAYGROUND_ALLOW_MUTATIONS=true</code> to enable them; use a test environment.</p>
+  {% else %}
+    <p>Names are prefixed <code>{{ prefix }}</code> and everything created is tracked below for cleanup. Organization changes are limited to organizations created here. Type <code>{{ confirm_word }}</code> to confirm each action.</p>
+  {% endif %}
+  {% set created_orgs = created | selectattr("kind", "equalto", "organization") | list %}
+  {% set created_users = created | selectattr("kind", "equalto", "user") | list %}
+
+  <div class="scenarios">
+    <form class="scenario" method="post" action="/management/scenarios/create-user">
+      {{ ui.csrf() }}
+      <h3>Create a user</h3>
+      <p class="small"><code>users_api.create_user(CreateUserRequest(...))</code></p>
+      <label class="field"><span>Email</span><input name="email" type="email" placeholder="playground+demo@example.com"></label>
+      <label class="field"><span>Confirm</span><input name="confirm" placeholder="{{ confirm_word }}" autocomplete="off"></label>
+      <button class="btn" {% if not allow_mutations %}disabled{% endif %}>Create user</button>
+    </form>
+
+    <form class="scenario" method="post" action="/management/scenarios/create-org">
+      {{ ui.csrf() }}
+      <h3>Create an organization</h3>
+      <p class="small"><code>organizations_api.create_organization(...)</code></p>
+      <label class="field"><span>Name</span><input name="name" placeholder="{{ prefix }}acme"></label>
+      <label class="field"><span>Confirm</span><input name="confirm" placeholder="{{ confirm_word }}" autocomplete="off"></label>
+      <button class="btn" {% if not allow_mutations %}disabled{% endif %}>Create organization</button>
+    </form>
+
+    <form class="scenario" method="post" action="/management/scenarios/add-user-to-org">
+      {{ ui.csrf() }}
+      <h3>Add a user to an organization</h3>
+      <p class="small"><code>organizations_api.add_organization_users(...)</code></p>
+      <label class="field"><span>Organization</span>
+        <select name="org_code">{% for o in created_orgs %}<option value="{{ o.id }}">{{ o.label }} ({{ o.id }})</option>{% else %}<option value="">Create an organization first</option>{% endfor %}</select>
+      </label>
+      <label class="field"><span>User</span>
+        <select name="user_id">
+          {% if current_user_id %}<option value="{{ current_user_id }}">You</option>{% endif %}
+          {% for u in created_users %}<option value="{{ u.id }}">{{ u.label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field"><span>Role key (optional)</span><input name="role" placeholder="{{ settings.demo_role }}"></label>
+      <label class="field"><span>Confirm</span><input name="confirm" placeholder="{{ confirm_word }}" autocomplete="off"></label>
+      <button class="btn" {% if not allow_mutations or not created_orgs %}disabled{% endif %}>Add to organization</button>
+    </form>
+
+    <form class="scenario" method="post" action="/management/scenarios/flag-override">
+      {{ ui.csrf() }}
+      <h3>Override a feature flag</h3>
+      <p class="small"><code>organizations_api.update_organization_feature_flag_override(...)</code></p>
+      <label class="field"><span>Organization</span>
+        <select name="org_code">{% for o in created_orgs %}<option value="{{ o.id }}">{{ o.label }}</option>{% else %}<option value="">Create an organization first</option>{% endfor %}</select>
+      </label>
+      <label class="field"><span>Flag key</span><input name="flag_key" value="{{ settings.demo_flag }}"></label>
+      <label class="field"><span>Value</span><input name="value" placeholder="true"></label>
+      <label class="field"><span>Confirm</span><input name="confirm" placeholder="{{ confirm_word }}" autocomplete="off"></label>
+      <button class="btn" {% if not allow_mutations or not created_orgs %}disabled{% endif %}>Override flag</button>
+    </form>
+
+    <form class="scenario" method="post" action="/management/scenarios/meter-usage">
+      {{ ui.csrf() }}
+      <h3>Record metered usage</h3>
+      <p class="small"><code>billing_meter_usage_api.create_meter_usage_record(...)</code></p>
+      <label class="field"><span>Customer agreement ID</span><input name="customer_agreement_id" placeholder="agreement_…"></label>
+      <label class="field"><span>Billing feature code</span><input name="billing_feature_code" placeholder="api_calls"></label>
+      <label class="field"><span>Value</span><input name="meter_value" inputmode="decimal" placeholder="1"></label>
+      <label class="field"><span>Confirm</span><input name="confirm" placeholder="{{ confirm_word }}" autocomplete="off"></label>
+      <button class="btn" {% if not allow_mutations %}disabled{% endif %}>Record usage</button>
+      <p class="muted small">Usage records can't be deleted.</p>
+    </form>
+  </div>
+</section>
+
+<section class="card" id="created">
+  <div class="card-head">
+    <h2>Created by the playground</h2>
+    {% if created %}
+    <form method="post" action="/management/cleanup" data-confirm="Delete every resource listed here from Kinde?">{{ ui.csrf() }}<button class="btn btn-danger" {% if not allow_mutations %}disabled{% endif %}>Clean up</button></form>
+    {% endif %}
+  </div>
+  {% if created %}
+  <table class="table">
+    <thead><tr><th>Type</th><th>Name</th><th>ID</th><th>Created</th></tr></thead>
+    <tbody>{% for item in created %}<tr><td>{{ item.kind }}</td><td>{{ item.label }}</td><td><code>{{ item.id }}</code></td><td class="small">{{ item.created_at }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% else %}
+    {{ ui.empty("Nothing yet", "Resources created by the write scenarios appear here.") }}
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Session & storage" %}
+{% block lede %}<p class="lede">Where the SDK keeps login state and tokens, and what reaches the browser.</p>{% endblock %}
+{% block content %}
+<section class="grid-3">
+  <div class="card stat">
+    <span class="muted">Framework</span>
+    <strong>{{ framework_name }}</strong>
+    <small class="muted">{{ framework_class }}</small>
+  </div>
+  <div class="card stat">
+    <span class="muted">SDK storage</span>
+    <strong>{{ storage_type or "framework" }}</strong>
+    <small class="muted">{{ storage_class }}</small>
+  </div>
+  <div class="card stat">
+    <span class="muted">Cookie <code>{{ cookie_name }}</code></span>
+    <strong>{{ cookie_length }} chars</strong>
+    <small class="muted">A session ID only: the data stays on the server.</small>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Session keys</h2>
+  <p class="muted">Values are never shown, only their shape. <code>pg_*</code> keys belong to the playground; the rest are written by the SDK.</p>
+  {% if keys %}
+  <table class="table">
+    <thead><tr><th>Key</th><th>Contents</th><th>Owner</th></tr></thead>
+    <tbody>
+    {% for k in keys %}
+      <tr><td><code>{{ k.key }}</code></td><td class="small">{{ k.description }}</td><td>{{ "playground" if k.ours else "SDK / framework" }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    {{ ui.empty("Empty session", "Sign in to see what the SDK stores.") }}
+  {% endif %}
+  {% if user_id %}<p class="small muted">The SDK identifies this session's user by an internal ID ({{ user_id | mask }}), which keys its token storage.</p>{% endif %}
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <h2>Standalone sessions</h2>
+    <p><code>KindeSessionManagement()</code> in this app:</p>
+    <pre class="code small"><code>{{ standalone_note }}</code></pre>
+    <p class="muted small">It's for scripts and workers that run without a web framework, where you choose which user each SDK call acts for.</p>
+  </div>
+  <div class="card">
+    <h2>Storage backends</h2>
+    <p>A scratch <code>memory</code> store created with <code>StorageFactory.create_storage({"type": "memory"})</code>:</p>
+    <dl class="facts">
+      <dt><code>set("demo", …)</code> then <code>get</code></dt><dd class="mono">{{ roundtrip | tojson }}</dd>
+      <dt>after <code>delete</code></dt><dd class="mono">{{ after_delete | tojson }}</dd>
+    </dl>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% if call.ok %}
+<dl class="facts">
+  <dt>Token</dt><dd class="mono">{{ call.result.token }}</dd>
+  <dt>Expires</dt><dd>{{ call.result.expires | timestamp if call.result.expires else "unknown" }}</dd>
+  <dt>Audience</dt><dd class="mono small">{{ call.result.audience | join(", ") if call.result.audience is iterable and call.result.audience is not string else call.result.audience }}</dd>
+  <dt>Scopes</dt><dd>{% for s in call.result.scopes %}<span class="badge">{{ s }}</span> {% else %}<span class="muted">none listed</span>{% endfor %}</dd>
+</dl>
+<p class="muted small">Fetched with the client credentials grant and cached by <code>ManagementClient</code> until it expires.</p>
+{% else %}
+<p class="call-error-text">{{ call.error }}</p>
+<p class="muted small">Check that the M2M application is authorized for the Kinde Management API with the scopes you need.</p>
+{% endif %}

@@ -1,0 +1,17 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local state written by the playground
+.playground/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/

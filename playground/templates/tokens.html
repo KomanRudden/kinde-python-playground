@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Tokens" %}
+{% block lede %}<p class="lede">What the SDK holds for this session. Raw tokens are never shown unless debug mode is on.</p>{% endblock %}
+{% block content %}
+<section class="grid-3">
+  <div class="card stat">
+    <span class="muted">Access token expires</span>
+    {% if expires_in is not none %}
+      <strong data-countdown="{{ expires_at }}">{{ expires_in }} s</strong>
+      <small class="muted">{{ expires_at | timestamp }}</small>
+    {% else %}<strong>unknown</strong>{% endif %}
+  </div>
+  <div class="card stat">
+    <span class="muted">Refresh token</span>
+    <strong>{{ "Present" if has_refresh else "None" }}</strong>
+    <small class="muted">{{ "Expired access tokens are refreshed for you." if has_refresh else "Request the offline scope to get one." }}</small>
+  </div>
+  <div class="card stat">
+    <span class="muted"><code>tokens.get_token_info()</code></span>
+    <strong>{{ "Authenticated" if info.isAuthenticated else "Not authenticated" }}</strong>
+    <small class="muted">user {{ info.userId | mask }}</small>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Stored tokens</h2>
+    <div class="actions">
+      <form method="post" action="/tokens/refresh">{{ ui.csrf() }}<button class="btn" {% if not has_refresh %}disabled title="No refresh token"{% endif %}>Refresh now</button></form>
+      <form method="post" action="/tokens/revoke" data-confirm="Revoke the access token at Kinde?">{{ ui.csrf() }}<button class="btn btn-danger">Revoke</button></form>
+    </div>
+  </div>
+  <table class="table">
+    <thead><tr><th>Token</th><th>Value</th><th></th></tr></thead>
+    <tbody>
+    {% for t in tokens %}
+      <tr>
+        <td>{{ t.name }}</td>
+        {% if t.present %}
+          <td class="mono"><span data-masked>{{ t.masked }}</span>{% if t.value %}<span data-revealed hidden>{{ t.value }}</span>{% endif %}</td>
+          <td>{% if t.value %}<button type="button" class="btn-ghost small" data-reveal>Reveal</button>{% endif %}</td>
+        {% else %}
+          <td class="muted">not issued</td><td></td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if not settings.debug %}<p class="muted small">Set <code>PLAYGROUND_DEBUG=true</code> to enable reveal buttons locally. Never in production.</p>{% endif %}
+</section>
+
+<section class="grid-2">
+  <div class="card"><h2>Access token claims</h2>{{ access_claims | json }}</div>
+  <div class="card"><h2>ID token claims</h2>{{ id_claims | json }}</div>
+</section>
+{% endblock %}

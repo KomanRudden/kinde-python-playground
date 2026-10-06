@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Permissions & roles" %}
+{% block lede %}<p class="lede">The same checks from the access token's claims and live from the Account API, side by side.</p>{% endblock %}
+{% block content %}
+<form class="card form inline" method="get" action="/access">
+  <label class="field"><span>Permission key</span><input name="permission" value="{{ permission_key }}"></label>
+  <label class="field"><span>Role key</span><input name="role" value="{{ role_key }}"></label>
+  <button class="btn">Check</button>
+</form>
+{% if sdk_force_api %}<div class="flash flash-info">The client was created with <code>force_api=True</code>, so the token-claims column also calls the Account API.</div>{% endif %}
+
+<section class="grid-2">
+  {% for column in results %}
+  <div class="card">
+    <h2>{{ column.label }}</h2>
+    {% for key, expr in [("permission", "get_permission(" ~ (permission_key | tojson) ~ ")"), ("role", "get_role(" ~ (role_key | tojson) ~ ")")] %}
+      {% set call = column[key] %}
+      <div class="verdict">
+        <code>{{ expr }}</code>
+        {% if call.ok %}{{ ui.status("allowed" if call.result.isGranted else "denied") }}{% else %}{{ ui.status("fail") }}{% endif %}
+      </div>
+    {% endfor %}
+    {{ ui.call_result(column.permission, "permissions.get_permission(" ~ (permission_key | tojson) ~ ")") }}
+    {{ ui.call_result(column.permissions, "permissions.get_permissions()") }}
+    {{ ui.call_result(column.role, "roles.get_role(" ~ (role_key | tojson) ~ ")") }}
+    {{ ui.call_result(column.roles, "roles.get_roles()") }}
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

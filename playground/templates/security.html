@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Security audit" %}
+{% block lede %}<p class="lede">Checks that this integration keeps secrets out of the browser and the logs, and refuses forged sign-ins.</p>{% endblock %}
+{% block content %}
+<section class="grid-2">
+  <div class="card">
+    <h2>This session</h2>
+    {{ ui.check_list(session_checks) }}
+  </div>
+  <div class="card">
+    <h2>Configuration</h2>
+    {{ ui.check_list(posture) }}
+  </div>
+</section>
+
+<section class="card" id="probes">
+  <div class="card-head">
+    <h2>Live probes</h2>
+    <form method="post" action="/security/run#probes">{{ ui.csrf() }}<button class="btn" {% if not probes_available %}disabled{% endif %}>{{ "Run again" if probes else "Run probes" }}</button></form>
+  </div>
+  <p class="muted">A separate client with its own cookies starts logins and sends forged, mismatched, missing and replayed callbacks to this app. Every SDK log line written meanwhile is scanned for secrets, tokens, codes and states.{% if signed_in %} Pages are also fetched with your session and checked for raw tokens.{% endif %}</p>
+  <p class="muted small">The replay probe sends one invalid code to Kinde's token endpoint, which is expected to fail.</p>
+  {% if probes %}
+    {{ ui.check_list(probes.checks) }}
+    <p class="muted small">Completed in {{ probes.ms }} ms.</p>
+    <details>
+      <summary>SDK log lines from this run ({{ probes.logs | length }})</summary>
+      {% if probes.logs %}
+      <table class="table log">
+        <tbody>{% for r in probes.logs %}<tr><td class="small muted">{{ r.level }}</td><td class="small mono">{{ r.logger }}</td><td class="small">{{ r.text }}</td></tr>{% endfor %}</tbody>
+      </table>
+      {% else %}<p class="muted small">None.</p>{% endif %}
+    </details>
+  {% endif %}
+</section>
+{% endblock %}

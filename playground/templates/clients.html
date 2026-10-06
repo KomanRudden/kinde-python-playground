@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Client modes" %}
+{% block lede %}<p class="lede">The SDK offers three OAuth clients. This app runs one, chosen with <code>PLAYGROUND_CLIENT_MODE</code>; create exactly one per process.</p>{% endblock %}
+{% block content %}
+<section class="grid-3">
+  {% for m in modes %}
+  <div class="card mode{% if m.mode == active %} mode-active{% endif %}">
+    <div class="card-head">
+      <h2><code>{{ m.kind }}</code></h2>
+      {% if m.mode == active %}<span class="status status-ok">Running</span>{% else %}<span class="muted small">PLAYGROUND_CLIENT_MODE={{ m.mode }}</span>{% endif %}
+    </div>
+    <p>{{ m.summary }}</p>
+    <pre class="code small"><code>{{ m.code }}</code></pre>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="card">
+  <h2>Live calls on the running {{ client_kind }}</h2>
+  {% for call in calls %}{{ ui.call_result(call) }}{% endfor %}
+  {% if not auth.authenticated %}<p class="muted">Sign in to compare the user info calls.</p>{% endif %}
+  {% if has_async %}<p class="muted small">Prefer <code>get_user_info_async()</code> in async handlers: the sync method makes a blocking HTTP call.</p>{% endif %}
+</section>
+
+{% if smart_warning %}
+<section class="card">
+  <h2>SmartOAuth context warning</h2>
+  <p>Calling a sync method from inside the event loop emits a one-time warning:</p>
+  <pre class="code"><code>DeprecationWarning: {{ smart_warning }}</code></pre>
+</section>
+{% endif %}
+{% endblock %}

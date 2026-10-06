@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Dashboard" %}
+{% block lede %}<p class="lede">Exercise every part of the Kinde Python SDK the way your app would use it.</p>{% endblock %}
+{% block content %}
+{% for warning in warnings %}<div class="flash flash-warn">{{ warning }}</div>{% endfor %}
+
+<section class="card">
+  <div class="card-head">
+    <h2>Setup checks</h2>
+    <button type="button" class="btn btn-ghost" data-reload="#setup-checks">Run again</button>
+  </div>
+  <div id="setup-checks" data-src="/partials/setup-checks"><p class="muted">Checking your Kinde configuration…</p></div>
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <h2>{% if auth.authenticated %}Signed in{% else %}Get started{% endif %}</h2>
+    {% if auth.authenticated %}
+      <p>You're signed in as <strong>{{ auth.name }}</strong>{% if auth.org_code %} in <code>{{ auth.org_name or auth.org_code }}</code>{% endif %}.</p>
+      <div class="actions">
+        <a class="btn" href="/tokens">Inspect tokens</a>
+        <a class="btn btn-ghost" href="/access">Check permissions</a>
+        <a class="btn btn-ghost" href="/security">Run security audit</a>
+      </div>
+    {% else %}
+      <ol class="steps">
+        <li>Add <code>{{ settings.redirect_uri }}</code> to <em>Allowed callback URLs</em> in your Kinde application.</li>
+        <li>Add <code>{{ settings.post_logout_redirect_uri }}</code> to <em>Allowed logout redirect URLs</em>.</li>
+        <li>Sign in, then explore the pages on the left.</li>
+      </ol>
+      <div class="actions">
+        <a class="btn" href="/auth/start">Sign in</a>
+        <a class="btn btn-ghost" href="/auth">Try login options</a>
+      </div>
+    {% endif %}
+  </div>
+  <div class="card">
+    <h2>This app</h2>
+    <dl class="facts">
+      <dt>Framework</dt><dd>{{ "Flask (kinde_flask)" if framework == "flask" else "FastAPI (kinde_fastapi)" }}</dd>
+      <dt>Client</dt><dd><code>{{ client_kind }}</code> <a href="/clients" class="small">compare modes</a></dd>
+      <dt>Claims source</dt><dd>{{ "Account API on every call (force_api)" if settings.force_api else "Token claims, Account API on request" }}</dd>
+      <dt>Management API</dt><dd>{{ ("enabled" + (", writes allowed" if settings.allow_mutations else ", read-only")) if settings.management_enabled else "not configured" }}</dd>
+    </dl>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Configuration</h2>
+  <p class="muted">Secrets are never rendered: they are shown masked so you can confirm which value is loaded.</p>
+  <table class="table">
+    <thead><tr><th>Setting</th><th>Value</th><th></th></tr></thead>
+    <tbody>
+    {% for row in summary %}
+      <tr>
+        <td><code>{{ row.name }}</code></td>
+        <td class="{{ 'mono' if row.status == 'ok' else 'muted' }}">{{ row.value }}</td>
+        <td>{% if row.status == "missing" %}<span class="status status-fail">Missing</span>{% elif row.secret and row.status == "ok" %}<span class="status status-info">Masked</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

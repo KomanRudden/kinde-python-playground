@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Profile" %}
+{% block lede %}<p class="lede">Who is signed in, from three sources: the userinfo endpoint, the Account API profile, and user properties.</p>{% endblock %}
+{% block content %}
+{% for call in calls %}
+<section class="card">{{ ui.call_result(call) }}</section>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% set page_title = "Something went wrong" %}
+{% block content %}
+<section class="card denied-card">
+  <h2>{{ status_code | default(500) }} · {{ error_title | default("Unexpected error") }}</h2>
+  <p>{{ error_message | default("The request couldn't be completed. Details are in the server log; they're never shown here.") }}</p>
+  <a class="btn" href="/">Back to the dashboard</a>
+</section>
+{% endblock %}

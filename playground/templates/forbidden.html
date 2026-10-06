@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% set page_title = "Access denied" %}
+{% block content %}
+<section class="card denied-card">
+  <h2>{{ rule }}</h2>
+  <p>You're signed in, but {{ detail }}.</p>
+  <p class="muted">Grant it in Kinde, then sign in again (or use the Account API with <code>force_api</code>) to pick up the change.</p>
+  <div class="actions">
+    <a class="btn" href="/protected">Back to protected routes</a>
+    <a class="btn btn-ghost" href="/access">Check permissions & roles</a>
+  </div>
+</section>
+{% endblock %}

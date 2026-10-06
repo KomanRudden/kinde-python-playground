@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Protected routes" %}
+{% block lede %}<p class="lede">Each route below is behind a guard. Guards sign the user in first, then check the rule, and deny if the check fails for any reason.</p>{% endblock %}
+{% block content %}
+<section class="card">
+  <table class="table">
+    <thead><tr><th>Route</th><th>Guard</th><th>Your access</th><th></th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td><code>{{ row.path }}</code><br><small class="muted">{{ row.description }}</small></td>
+        <td><code class="small">{{ row.rule }}</code></td>
+        <td>{{ ui.status(row.status) }}<br><small class="muted">{{ row.detail }}</small></td>
+        <td class="right"><a class="btn btn-ghost" href="{{ row.path }}">Visit</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">Change the keys with <code>PLAYGROUND_DEMO_PERMISSION</code>, <code>_ROLE</code>, <code>_FLAG</code> and <code>_ENTITLEMENT</code>.</p>
+</section>
+
+<section class="card">
+  <h2>Using the integration directly</h2>
+  <p>Without the playground's guards, protect a route with the framework integration alone:</p>
+  {% if framework == "flask" %}
+  <pre class="code"><code>@app.route("/protected/native")
+def native():
+    if not oauth.is_authenticated():
+        return redirect("/login")
+    return {"user": oauth.get_user_info()["email"]}</code></pre>
+  {% else %}
+  <pre class="code"><code>def current_user(request: Request) -&gt; dict:
+    if not oauth.is_authenticated():
+        raise HTTPException(status_code=401)
+    return oauth.get_user_info()
+
+@app.get("/protected/native")
+async def native(user: dict = Depends(current_user)):
+    return {"user": user["email"]}</code></pre>
+  {% endif %}
+  <a class="btn btn-ghost" href="{{ native_path }}">Try {{ native_path }}</a>
+</section>
+{% endblock %}

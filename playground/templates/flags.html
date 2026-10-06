@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Feature flags" %}
+{% block lede %}<p class="lede">Read flags with a typed default, from the token or the Account API.</p>{% endblock %}
+{% block content %}
+<form class="card form inline" method="get" action="/flags">
+  <label class="field"><span>Flag code</span><input name="code" value="{{ flag_code }}"></label>
+  <label class="field">
+    <span>Default type</span>
+    <select name="default_type">{% for t in default_types %}<option {% if t == default_type %}selected{% endif %}>{{ t }}</option>{% endfor %}</select>
+  </label>
+  <label class="field"><span>Default value</span><input name="default_value" value="{{ default_value }}"></label>
+  <button class="btn">Evaluate</button>
+</form>
+
+<section class="grid-2">
+  {% for call in lookup %}
+  <div class="card">
+    <h2>{{ call.label }}</h2>
+    {% if call.ok %}
+      <div class="flag-value">
+        <span class="flag-code">{{ call.result.code }}</span>
+        <strong class="mono">{{ call.result.value | tojson }}</strong>
+        <span class="badge">{{ call.result.type }}</span>
+        {% if call.result.is_default %}<span class="status status-warn">default used</span>{% else %}<span class="status status-ok">from Kinde</span>{% endif %}
+      </div>
+    {% endif %}
+    {{ ui.call_result(call, "feature_flags.get_flag(" ~ (flag_code | tojson) ~ ", default_value=...)") }}
+  </div>
+  {% endfor %}
+</section>
+
+<section class="grid-2">
+  {% for call in listing %}
+  <div class="card">
+    <h2>All flags · {{ call.label }}</h2>
+    {% if call.ok and call.result %}
+      <table class="table">
+        <thead><tr><th>Code</th><th>Type</th><th>Value</th></tr></thead>
+        <tbody>{% for f in call.result %}<tr><td><code>{{ f.code }}</code></td><td>{{ f.type }}</td><td class="mono">{{ f.value | tojson }}</td></tr>{% endfor %}</tbody>
+      </table>
+    {% elif call.ok %}
+      {{ ui.empty("No flags", "No feature flags are defined for this user and organization.") }}
+    {% else %}
+      {{ ui.call_result(call, "feature_flags.get_all_flags()") }}
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

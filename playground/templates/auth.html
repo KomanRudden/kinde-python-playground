@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Sign in lab" %}
+{% block lede %}<p class="lede">Build a sign-in or sign-up request with any option the SDK supports. Preview the URL first, or go straight to Kinde.</p>{% endblock %}
+{% block content %}
+<form class="card form" method="post" action="/auth/start">
+  {{ ui.csrf() }}
+  <div class="segmented" role="radiogroup" aria-label="Flow">
+    <label><input type="radio" name="flow" value="login" {% if values.flow != "register" %}checked{% endif %}> Sign in <code>oauth.login()</code></label>
+    <label><input type="radio" name="flow" value="register" {% if values.flow == "register" %}checked{% endif %}> Sign up <code>oauth.register()</code></label>
+  </div>
+
+  <h2>Login options</h2>
+  <div class="fields">
+    {% for key, label, placeholder, help in text_options %}
+    <label class="field">
+      <span>{{ label }} <code class="small">{{ key }}</code></span>
+      <input name="{{ key }}" value="{{ values.get(key, '') }}" placeholder="{{ placeholder }}" autocomplete="off">
+      <small>{{ help }}</small>
+    </label>
+    {% endfor %}
+    <label class="field">
+      <span>Prompt <code class="small">prompt</code></span>
+      <select name="prompt">
+        <option value="">Default</option>
+        {% for p in prompts %}<option value="{{ p }}" {% if values.prompt == p %}selected{% endif %}>{{ p }}</option>{% endfor %}
+      </select>
+      <small><code>login</code> forces re-authentication, <code>create</code> opens sign-up, <code>none</code> fails if not already signed in.</small>
+    </label>
+    <label class="field">
+      <span>Scope <code class="small">scope</code></span>
+      <input name="scope" value="{{ values.get('scope', default_scope) }}">
+      <small>Must include <code>openid</code>. Add <code>offline</code> to receive a refresh token.</small>
+    </label>
+  </div>
+
+  <h2>Organizations and invitations</h2>
+  <div class="fields">
+    <label class="field check-field">
+      <input type="checkbox" name="is_create_org" {% if values.is_create_org %}checked{% endif %}>
+      <span>Create an organization during sign-up <code class="small">is_create_org</code></span>
+    </label>
+    <label class="field">
+      <span>New organization name <code class="small">org_name</code></span>
+      <input name="org_name" value="{{ values.get('org_name', '') }}" placeholder="Acme Inc">
+    </label>
+    <label class="field">
+      <span>Invitation code <code class="small">invitation_code</code></span>
+      <input name="invitation_code" value="{{ values.get('invitation_code', '') }}" autocomplete="off">
+      <small>From an invitation email. The built-in <code>/login?invitation_code=…</code> route does the same.</small>
+    </label>
+  </div>
+
+  <h2>Advanced</h2>
+  <div class="fields">
+    <label class="field wide">
+      <span>Extra authorization parameters <code class="small">auth_params</code></span>
+      <textarea name="auth_params" rows="3" placeholder="utm_source=newsletter&#10;audience_hint=partners">{{ values.get('auth_params', '') }}</textarea>
+      <small>One <code>key=value</code> per line. Parameters the SDK manages (state, nonce, redirect_uri…) are rejected.</small>
+    </label>
+    <label class="field">
+      <span>Return to after sign-in</span>
+      <input name="next" value="{{ values.get('next', '/') }}" placeholder="/billing">
+      <small>Stored as <code>session["post_login_redirect_url"]</code>; only same-site paths are allowed.</small>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button class="btn" name="action" value="go">Continue to Kinde</button>
+    <button class="btn btn-ghost" name="action" value="preview">Preview URL</button>
+  </div>
+</form>
+
+{% if preview %}
+<section class="card" id="preview">
+  <h2>Authorization request ({{ "sign up" if preview.flow == "register" else "sign in" }})</h2>
+  <p class="mono small">{{ preview.endpoint }}</p>
+  <table class="table">
+    <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+    <tbody>
+    {% for p in preview.params %}
+      <tr><td><code>{{ p.name }}</code></td><td class="mono">{{ p.value }}{% if p.masked %} <span class="status status-info">one-time</span>{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">State, nonce and the PKCE challenge are generated per request and stored in your session; this preview started a login, so the next callback must use it.</p>
+  <h3>login_options passed to the SDK</h3>
+  {{ preview.options | json }}
+</section>
+{% endif %}
+{% endblock %}
