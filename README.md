@@ -6,6 +6,18 @@ real application would use it. The same pages run on **Flask** (`kinde_flask`) a
 
 Every page pairs a live result with a "How this works" panel showing the SDK code behind it.
 
+## Screenshots
+
+The Flask app, signed in to a real Kinde business. Tokens stay masked, and the security probes run against the live app.
+
+![Dashboard: setup checks against Kinde](docs/screenshots/dashboard.png)
+
+![Tokens: expiry, refresh and masked values](docs/screenshots/tokens.png)
+
+![Management API: M2M token and read explorers](docs/screenshots/management.png)
+
+![Security audit: forged, mismatched and replayed callbacks rejected](docs/screenshots/security.png)
+
 | Page | What it exercises |
 | --- | --- |
 | Dashboard | Configuration (secrets masked) and live setup checks: OIDC discovery, callback URL, M2M token |
