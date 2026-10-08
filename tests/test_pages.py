@@ -7,7 +7,7 @@ from playground.web import ROUTES, load_routes
 
 load_routes()
 
-PUBLIC = ["/", "/auth", "/clients", "/session", "/protected", "/security"]
+PUBLIC = ["/", "/auth", "/clients", "/session", "/protected", "/security", "/regression"]
 SIGNED_IN_ONLY = ["/profile", "/tokens", "/claims", "/access", "/flags", "/billing", "/portal",
                   "/organizations", "/management", "/protected/user"]
 

@@ -1,0 +1,10 @@
+{% if not test %}
+<p class="muted">This test has no detail yet.</p>
+{% else %}
+{% set story = test.story or {} %}
+<div class="run-story">
+  <p>{{ story.did or "Exercises the SDK." }}</p>
+  <p><span>HTTP</span> {{ story.http or "Nothing is sent to Kinde." }}</p>
+  <p><span>Result</span> {{ story.result or "Passed." }}</p>
+</div>
+{% endif %}

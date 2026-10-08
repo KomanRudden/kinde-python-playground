@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 from .config import Settings
 from .redact import install_logging
-from .web import Json, Page, Partial, Redirect, Request, Route, csrf_valid, env, render
+from .web import Json, Page, Partial, Redirect, Request, Route, csrf_token, csrf_valid, env, render
 
 logger = logging.getLogger("playground")
 
@@ -58,7 +58,10 @@ async def dispatch(route: Route, req: Request, kinde: Any) -> Outcome:
 
 async def _html(page: Page, req: Request, kinde: Any) -> Outcome:
     if isinstance(page, Partial):
-        return Outcome("html", env.get_template(page.template).render(**page.context), page.status)
+        # The status panel is fetched and swapped in after load, so its form
+        # needs the same session token as the rest of the page.
+        context = {"csrf_token": csrf_token(req.session), **page.context}
+        return Outcome("html", env.get_template(page.template).render(**context), page.status)
     auth = await kinde.auth_context()
     return Outcome("html", render(page, req, kinde, auth), page.status)
 

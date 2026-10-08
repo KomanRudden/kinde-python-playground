@@ -1,4 +1,4 @@
-{% from "_macros.html" import snippet as snippet_panel %}
+{% from "_macros.html" import snippet as snippet_panel, snippet_button %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -38,6 +38,7 @@
         {% block lede %}{% endblock %}
       </div>
       <div class="auth-chip">
+        {% if snippet %}{{ snippet_button() }}{% endif %}
         {% if auth.authenticated %}
           <span class="avatar">{{ auth.initials }}{% if auth.picture %}<img src="{{ auth.picture }}" alt="" referrerpolicy="no-referrer">{% endif %}</span>
           <span class="auth-name">
@@ -58,13 +59,11 @@
     </div>
     {% endif %}
 
-    <div class="content{% if snippet %} with-aside{% endif %}">
+    <div class="content">
       <main class="page">{% block content %}{% endblock %}</main>
-      {% if snippet %}
-      <aside class="aside">{{ snippet_panel(snippet) }}{% block aside %}{% endblock %}</aside>
-      {% endif %}
     </div>
   </div>
 </div>
+{% if snippet %}{{ snippet_panel(snippet) }}{% endif %}
 </body>
 </html>

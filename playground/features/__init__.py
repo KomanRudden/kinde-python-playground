@@ -12,6 +12,7 @@ from . import (  # noqa: F401
     portal,
     profile,
     protected,
+    regression,
     security,
     session,
     tokens,

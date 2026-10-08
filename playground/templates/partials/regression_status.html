@@ -1,0 +1,144 @@
+<details class="run-accordion" data-id="section:live">
+  <summary>
+    <span class="run-accordion-main">
+      <span class="run-accordion-title">
+        {% if live %}
+        <span class="status status-{{ 'ok' if live.status == 'passed' else 'fail' if live.status == 'failed' else 'info' }}">
+          {{ "Passed" if live.status == "passed" else "Failed" if live.status == "failed" else "Skipped" }}
+        </span>
+        {% endif %}
+        <strong>Live checks</strong>
+      </span>
+      <span class="muted small">
+        {% if live %}
+          {{ live.passed }} passed{% if live.failed %}, {{ live.failed }} failed{% endif %}{% if live.skipped %}, {{ live.skipped }} skipped{% endif %} · {{ live.elapsed }}s
+        {% else %}
+          No live checks yet. The button calls your Kinde business.
+        {% endif %}
+      </span>
+    </span>
+    {% if signed_in %}
+    <form method="post" action="/regression/live" onclick="event.stopPropagation()">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn">Run live checks</button>
+    </form>
+    {% else %}
+    <a class="btn" href="/auth/start?next=/regression" onclick="event.stopPropagation()">Sign in to run live checks</a>
+    {% endif %}
+  </summary>
+  <div class="run-accordion-body">
+    <p class="muted small">Management calls use the M2M application. Flags, permissions, roles, and entitlements use the signed-in user. These stay out of the unit count.</p>
+    {% if not live %}
+    <p class="muted">No live checks yet.</p>
+    {% else %}
+    {% for group in live.checks | groupby('group') %}
+    <h3>{{ group.grouper }}</h3>
+    <div class="run-tests">
+      {% for check in group.list %}
+      <details class="run-test" data-id="live:{{ check.id }}">
+        <summary>
+          <span class="status status-{{ 'ok' if check.outcome == 'passed' else 'fail' if check.outcome == 'failed' else 'info' }}">{{ "Pass" if check.outcome == "passed" else "Fail" if check.outcome == "failed" else "Skip" }}</span>
+          <strong>{{ check.name }}</strong>
+          <span class="run-test-summary">{{ check.result }}</span>
+        </summary>
+        <div class="run-story">
+          <p>{{ check.did }}</p>
+          <p><span>HTTP</span> {{ check.http }}</p>
+          <p><span>Result</span> {{ check.result }}</p>
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+</details>
+
+<details class="run-accordion" data-id="section:full" {% if run and run.running %}open{% endif %}>
+  <summary>
+    <span class="run-accordion-main">
+      <span class="run-accordion-title">
+        {% if run %}
+        <span class="status status-{{ 'ok' if run.status == 'passed' else 'fail' if run.status == 'failed' else 'info' }}">
+          {{ "Running" if run.running else "Passed" if run.status == "passed" else "Failed" }}
+        </span>
+        {% endif %}
+        <strong>Full regression</strong>
+      </span>
+      <span class="muted small">
+        {% if not run %}
+          No run yet. The button starts the SDK suite, then this app's suite.
+        {% else %}
+          {{ run.done }}{% if run.total %} / {{ run.total }}{% endif %} · {{ run.passed }} passed{% if run.failed %}, {{ run.failed }} failed{% endif %}{% if run.skipped %}, {{ run.skipped }} skipped{% endif %} · {{ run.elapsed }}s
+        {% endif %}
+      </span>
+    </span>
+    <form method="post" action="/regression/run" onclick="event.stopPropagation()">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn" {% if run and run.running %}disabled{% endif %}>
+        {{ "Running…" if run and run.running else "Run full regression" }}
+      </button>
+    </form>
+  </summary>
+  <div class="run-accordion-body" {% if run and run.running %}data-running="1"{% endif %}>
+    {% if not run %}
+    <p class="muted">No run yet. The button starts the SDK suite, then this app's suite.</p>
+    {% else %}
+    <div class="progress{% if run.failed %} progress-fail{% endif %}" aria-hidden="true"><span style="width: {{ run.percent }}%"></span></div>
+    <section class="run-now">
+      <p class="muted small">{{ run.phase }}</p>
+      <p>{{ run.about }}</p>
+      {% if run.current_test %}
+      <p class="run-current">
+        <span class="badge">{{ run.current_area }}</span>
+        {{ run.current_explanation }}
+      </p>
+      <p class="mono small muted">{{ run.current_file }} · {{ run.current_test }}</p>
+      {% endif %}
+    </section>
+    {% if run.failures %}
+    <h3>Failures</h3>
+    <ul class="run-failures">
+      {% for failure in run.failures %}
+      <li>
+        <code>{{ failure.node }}</code>
+        {% if failure.detail %}<span>{{ failure.detail }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if run.files %}
+    <h3>Done</h3>
+    <div class="run-files">
+      {% for file in run.files %}
+      <details class="run-file" data-id="{{ file.suite }}:{{ file.filename }}" {% if file.current %}open{% endif %}>
+        <summary>
+          <span class="status status-{{ file.outcome }}">{{ "Now" if file.current else "Fail" if file.outcome == "fail" else "Pass" }}</span>
+          <span>
+            <strong>{{ file.suite }} · {{ file.area }}</strong>
+            <span class="muted small">{{ file.filename }} · {{ file.passed }} passed{% if file.failed %}, {{ file.failed }} failed{% endif %}{% if file.skipped %}, {{ file.skipped }} skipped{% endif %}</span>
+            <span class="run-file-about">{{ file.explanation }}</span>
+          </span>
+        </summary>
+        {% if file.tests %}
+        <div class="run-tests">
+          {% for test in file.tests %}
+          <details class="run-test" data-id="{{ test.node }}" data-detail="/regression/partials/detail?node={{ test.node | urlencode }}">
+            <summary>
+              <span class="status status-{{ 'ok' if test.outcome == 'passed' else 'fail' if test.outcome == 'failed' else 'info' }}">{{ "Pass" if test.outcome == "passed" else "Fail" if test.outcome == "failed" else "Skip" }}</span>
+              <code>{{ test.name }}</code>
+              {% if test.duration_ms %}<span class="muted">{{ test.duration_ms }}ms</span>{% endif %}
+              {% if test.summary %}<span class="run-test-summary">{{ test.summary }}</span>{% endif %}
+            </summary>
+            <div class="run-detail"></div>
+          </details>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </details>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+</details>

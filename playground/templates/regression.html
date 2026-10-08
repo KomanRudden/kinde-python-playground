@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+{% set page_title = "Regression" %}
+{% block lede %}<p class="lede">Run the SDK suite and this app's suite in one go. Use it after changing the SDK.</p>{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="muted">pytest runs in a new process, so it tests the SDK on disk, including changes this app has not been restarted to load. The SDK suite uses the SDK project's virtualenv{% if sdk_root %} ({{ sdk_root }}){% endif %}, then this app on Flask and FastAPI with Kinde mocked. A run usually takes about a minute.</p>
+  <p class="muted small">Live checks are first. They call your Kinde business, so sign in before running them. Full regression does not. Open a section to see every result, then a file and a test for the detail.</p>
+  <div id="regression-status" data-src="/regression/partials/status" {% if run and run.running %}data-poll="1"{% endif %}>
+    {% include "partials/regression_status.html" %}
+  </div>
+</section>
+{% endblock %}

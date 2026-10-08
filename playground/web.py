@@ -194,6 +194,7 @@ NAV = [
     ("Back end", [
         ("/management", "management", "Management API"),
         ("/security", "security", "Security audit"),
+        ("/regression", "regression", "Regression"),
     ]),
 ]
 

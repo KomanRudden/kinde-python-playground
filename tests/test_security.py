@@ -71,7 +71,7 @@ def test_probe_detects_a_leaky_page(signed_in, monkeypatch):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("path", ["/tokens/refresh", "/tokens/revoke", "/portal/open", "/security/run",
-                                  "/management/cleanup", "/auth/start"])
+                                  "/management/cleanup", "/auth/start", "/regression/run", "/regression/live"])
 def test_posts_without_csrf_token_are_rejected(signed_in, path):
     page = signed_in.post(path, {"sub_nav": "profile"}, csrf=False)
     assert page.status == 400

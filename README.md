@@ -35,6 +35,7 @@ The Flask app, signed in to a real Kinde business. Tokens stay masked, and the s
 | Protected routes | Guards for sign-in, permission, role, flag and entitlement; the framework-native equivalent |
 | Management API | M2M token, curated reads, a read-only console over every API, guarded write scenarios with cleanup |
 | Security audit | Session and cookie checks, forged / mismatched / replayed callbacks, SDK log scan |
+| Regression | One button runs the SDK suite, then this app's suite. A second button runs live Management and account API reads against your Kinde business |
 
 ## 1. Set up Kinde
 

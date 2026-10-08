@@ -1,11 +1,18 @@
+{% macro snippet_button(title="How this works") %}
+<button type="button" class="btn btn-ghost" data-snippet-open>{{ title }}</button>
+{% endmacro %}
+
 {% macro snippet(code, title="How this works") %}
-<details class="snippet" open>
-  <summary>{{ title }}</summary>
+<dialog class="snippet-modal" aria-labelledby="snippet-title">
+  <div class="snippet-modal-bar">
+    <h2 id="snippet-title">{{ title }}</h2>
+    <button type="button" class="btn btn-ghost" data-snippet-close>Close</button>
+  </div>
   <div class="snippet-body">
     <button type="button" class="btn-ghost copy" data-copy-target="next" aria-label="Copy code">Copy</button>
     <pre class="code"><code>{{ code }}</code></pre>
   </div>
-</details>
+</dialog>
 {% endmacro %}
 
 {% macro status(value) %}
